@@ -25,6 +25,8 @@ from PyQt5.QtWidgets import (
     QLineEdit,
     QTextEdit,
     QSizePolicy,
+    QComboBox,
+    QScrollArea,          # <-- added for right panel scrolling
 )
 
 # ==========================================
@@ -202,6 +204,45 @@ class ZakirAI(QMainWindow):
                 color: white;
                 font-size: 14px;
             }
+            
+            QComboBox {
+                background-color: #0f1830;
+                border: 1px solid #243b73;
+                border-radius: 12px;
+                padding: 8px;
+                color: white;
+                font-size: 13px;
+            }
+            
+            QComboBox::drop-down {
+                border: none;
+            }
+            
+            QComboBox QAbstractItemView {
+                background-color: #0f1830;
+                color: white;
+                selection-background-color: #1b2c57;
+            }
+            
+            /* Scroll area style */
+            QScrollArea {
+                border: none;
+                background: transparent;
+            }
+            
+            QScrollBar:vertical {
+                background: #0f1830;
+                width: 8px;
+                border-radius: 4px;
+            }
+            QScrollBar::handle:vertical {
+                background: #3b82f6;
+                border-radius: 4px;
+                min-height: 20px;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                height: 0px;
+            }
         """)
 
         # ==========================================
@@ -215,26 +256,18 @@ class ZakirAI(QMainWindow):
         central.setLayout(main_layout)
 
         # ==========================================
-        # LEFT PANEL
+        # LEFT PANEL (no scroll)
         # ==========================================
 
         sidebar = QFrame()
-
         sidebar.setFixedWidth(320)
-
         sidebar_layout = QVBoxLayout()
-
         sidebar.setLayout(sidebar_layout)
 
         # Logo
         logo = QLabel("⚡ ZAKIR AI")
-
         logo.setFont(QFont("Segoe UI", 22, QFont.Bold))
-
-        logo.setStyleSheet("""
-            padding: 10px;
-        """)
-
+        logo.setStyleSheet("padding: 10px;")
         sidebar_layout.addWidget(logo)
 
         # ==========================================
@@ -242,25 +275,17 @@ class ZakirAI(QMainWindow):
         # ==========================================
 
         recent_card = QFrame()
-
         recent_card.setStyleSheet("""
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(0,200,255,0.15);
             border-radius: 20px;
         """)
-
         recent_layout = QVBoxLayout()
-
         recent_card.setLayout(recent_layout)
-
         recent_title = QLabel("🕘 Recent Commands")
-
         recent_title.setFont(QFont("Segoe UI", 14, QFont.Bold))
-
         recent_layout.addWidget(recent_title)
-
         recent_list = QListWidget()
-
         recent_list.setStyleSheet("""
             QListWidget{
                 background: transparent;
@@ -268,20 +293,13 @@ class ZakirAI(QMainWindow):
                 color: white;
                 font-size: 14px;
             }
-
             QListWidget::item{
                 padding: 5px;
             }
         """)
-
         recent_list.addItem("🎵 Open Spotify")
         recent_list.addItem("🌐 Search AI News")
-        # recent_list.addItem("📂 Find project folder")
-        # recent_list.addItem("📸 Take Screenshot")
-        # recent_list.addItem("🔊 Volume Up")
-
         recent_layout.addWidget(recent_list)
-
         sidebar_layout.addWidget(recent_card)
 
         # ==========================================
@@ -289,50 +307,31 @@ class ZakirAI(QMainWindow):
         # ==========================================
 
         system_card = QFrame()
-
         system_card.setStyleSheet("""
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(0,200,255,0.15);
             border-radius: 20px;
         """)
-
         system_layout = QVBoxLayout()
-
         system_card.setLayout(system_layout)
-
         sys_title = QLabel("💻 System Status")
-
         sys_title.setFont(QFont("Segoe UI", 14, QFont.Bold))
-
         system_layout.addWidget(sys_title)
-
         cpu = QLabel("⚙ CPU Usage       23%")
         ram = QLabel("🧠 Memory Usage   61%")
         disk = QLabel("💾 Disk Usage     45%")
         network = QLabel("🌐 Network        Stable")
-
         for label in [cpu, ram, disk, network]:
-
-            label.setStyleSheet("""
-                color: #8aa0d6;
-                padding: 8px;
-                font-size: 14px;
-            """)
-
+            label.setStyleSheet("color: #8aa0d6; padding: 8px; font-size: 14px;")
             system_layout.addWidget(label)
-
         sidebar_layout.addWidget(system_card)
 
-
-            # ==========================================
-        # EXACT IMAGE STYLE PROFILE CARD
-        # LEFT SIDE BOTTOM
+        # ==========================================
+        # PROFILE CARD
         # ==========================================
 
         profile = QFrame()
-
         profile.setFixedHeight(95)
-
         profile.setStyleSheet("""
             QFrame{
                 background-color: #0f172a;
@@ -340,23 +339,13 @@ class ZakirAI(QMainWindow):
                 border-radius: 22px;
             }
         """)
-
         profile_layout = QHBoxLayout()
-
         profile_layout.setContentsMargins(18, 14, 18, 14)
-
         profile.setLayout(profile_layout)
 
-        # ==========================================
-        # AVATAR
-        # ==========================================
-
         avatar = QLabel("Z")
-
         avatar.setAlignment(Qt.AlignCenter)
-
         avatar.setFixedSize(52, 52)
-
         avatar.setStyleSheet("""
             background:qlineargradient(
                 x1:0,y1:0,
@@ -369,24 +358,12 @@ class ZakirAI(QMainWindow):
             font-size:24px;
             font-weight:bold;
         """)
-
         profile_layout.addWidget(avatar)
 
-
-        # ==========================================
-        # USER INFO
-        # ==========================================
-
         info_layout = QVBoxLayout()
-
         info_layout.setSpacing(2)
         info_layout.setAlignment(Qt.AlignVCenter)
-
-
-        # NAME
-
         name = QLabel("Zakirya")
-
         name.setStyleSheet("""
             QLabel{
                 color:white;
@@ -396,11 +373,7 @@ class ZakirAI(QMainWindow):
                 background:transparent;
             }
         """)
-
-        # ONLINE
-
         online = QLabel("● Online")
-
         online.setStyleSheet("""
             QLabel{
                 color:#22c55e;
@@ -410,16 +383,12 @@ class ZakirAI(QMainWindow):
                 background:transparent;
             }
         """)
-
         info_layout.addWidget(name)
         info_layout.addWidget(online)
-
         profile_layout.addLayout(info_layout)
-
         sidebar_layout.addWidget(profile)
 
-
-         # ==========================================
+        # ==========================================
         # DATE & TIME SECTION
         # ==========================================
 
@@ -431,31 +400,26 @@ class ZakirAI(QMainWindow):
                 padding: 0px;
             }
         """)
-
         datetime_layout = QHBoxLayout()
         datetime_layout.setSpacing(10)
         datetime_layout.setContentsMargins(10, 5, 10, 5)
         datetime_card.setLayout(datetime_layout)
 
-        # Icon on the left
         icon_label = QLabel("🕐")
         icon_label.setFont(QFont("Segoe UI", 28))
         icon_label.setAlignment(Qt.AlignCenter)
         icon_label.setFixedSize(50, 50)
-        
-        # Vertical layout for time and date (centered)
+
         time_date_layout = QVBoxLayout()
         time_date_layout.setSpacing(2)
         time_date_layout.setContentsMargins(0, 0, 0, 0)
         time_date_layout.setAlignment(Qt.AlignVCenter)
 
-        # Time label (12-hour format with AM/PM)
         self.time_label = QLabel()
         self.time_label.setFont(QFont("Segoe UI", 14, QFont.Bold))
         self.time_label.setStyleSheet("color: #00d4ff; background: transparent;")
         self.time_label.setAlignment(Qt.AlignLeft)
 
-        # Date and day label
         self.date_label = QLabel()
         self.date_label.setFont(QFont("Segoe UI", 9))
         self.date_label.setStyleSheet("color: #38bdf8; background: transparent;")
@@ -467,10 +431,7 @@ class ZakirAI(QMainWindow):
         datetime_layout.addWidget(icon_label)
         datetime_layout.addLayout(time_date_layout)
 
-        # Update time and date
         self.update_datetime()
-
-        # Timer to update every second
         datetime_timer = QTimer()
         datetime_timer.timeout.connect(self.update_datetime)
         datetime_timer.start(1000)
@@ -478,22 +439,18 @@ class ZakirAI(QMainWindow):
         sidebar_layout.addWidget(datetime_card)
         sidebar_layout.addStretch()
 
-
         # ==========================================
-        # CENTER SECTION
+        # CENTER SECTION (no scroll)
         # ==========================================
 
         center_frame = QFrame()
-
         center_layout = QVBoxLayout()
         center_frame.setLayout(center_layout)
 
         title = QLabel("Good Evening, Zakirya! 👋")
-        title.setFont(QFont("Segoe UI", 26, QFont.Bold))
-
+        title.setFont(QFont("Segoe UI", 20, QFont.Bold))
         subtitle = QLabel("How can I help you today?")
         subtitle.setStyleSheet("color: #8aa0d6; font-size: 15px;")
-
         center_layout.addWidget(title)
         center_layout.addWidget(subtitle)
 
@@ -507,7 +464,6 @@ class ZakirAI(QMainWindow):
 
         wave = WaveWidget()
         mic = GlowCircle()
-
         mic_container = QHBoxLayout()
         mic_container.addStretch()
         mic_container.addWidget(mic)
@@ -519,14 +475,12 @@ class ZakirAI(QMainWindow):
         status = QLabel("I'm listening")
         status.setAlignment(Qt.AlignCenter)
         status.setFont(QFont("Segoe UI", 22, QFont.Bold))
-
         sub_status = QLabel("Speak now...")
         sub_status.setAlignment(Qt.AlignCenter)
         sub_status.setStyleSheet("color:#8aa0d6;")
 
         stop_btn = QPushButton("⏹ Stop Listening")
         stop_btn.setFixedWidth(200)
-
         stop_layout = QHBoxLayout()
         stop_layout.addStretch()
         stop_layout.addWidget(stop_btn)
@@ -539,72 +493,96 @@ class ZakirAI(QMainWindow):
         center_layout.addWidget(listen_panel)
 
         # ==========================================
-        # QUICK ACTIONS
-        # ==========================================
-
-        actions_frame = QFrame()
-        actions_layout = QHBoxLayout()
-        actions_frame.setLayout(actions_layout)
-
-        actions = [
-            "Open App",
-            "Search Web",
-            "Screenshot",
-            "Volume Up",
-            "Shutdown"
-        ]
-
-        for act in actions:
-            btn = QPushButton(act)
-            btn.setFixedHeight(80)
-            actions_layout.addWidget(btn)
-
-        center_layout.addWidget(actions_frame)
-
-        # ==========================================
         # INPUT BAR
         # ==========================================
 
         input_layout = QHBoxLayout()
-
         self.input = QLineEdit()
         self.input.setPlaceholderText("Type a command or ask anything...")
-
         send_btn = QPushButton("➤")
         send_btn.setFixedWidth(60)
-
         input_layout.addWidget(self.input)
         input_layout.addWidget(send_btn)
-
         center_layout.addLayout(input_layout)
 
         # ==========================================
-        # RIGHT PANEL
+        # RIGHT PANEL (with QScrollArea)
         # ==========================================
 
+        # Outer frame that holds the scroll area
         right_panel = QFrame()
         right_panel.setFixedWidth(300)
+        right_panel.setStyleSheet("background: transparent; border: none;")
 
-        right_layout = QVBoxLayout()
-        right_panel.setLayout(right_layout)
+        # Create scroll area
+        right_scroll = QScrollArea()
+        right_scroll.setWidgetResizable(True)
+        right_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        right_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
-        # AI Chat Mode
+        # Container widget that will hold all right-side content
+        right_container = QWidget()
+        right_container.setStyleSheet("background: transparent;")
+        right_layout = QVBoxLayout(right_container)
+        right_layout.setContentsMargins(0, 0, 0, 0)
+        right_layout.setAlignment(Qt.AlignTop)
+
+        # ------------------- CHAT CARD -------------------
         chat_card = QFrame()
+        chat_card.setFixedWidth(300)
+        chat_card.setStyleSheet("""
+            QFrame{
+                background:qlineargradient(
+                    x1:0,y1:0,
+                    x2:1,y2:1,
+                    stop:0 #071122,
+                    stop:1 #0b1730
+                );
+                border:1px solid rgba(255,255,255,0.05);
+                border-radius:24px;
+            }
+        """)
         chat_layout = QVBoxLayout()
+        chat_layout.setContentsMargins(0, 5, 0, 0)
         chat_card.setLayout(chat_layout)
 
         chat_title = QLabel("🤖 AI Chat Mode")
-        active = QLabel("Active")
-        active.setStyleSheet("color: #00ff99;")
-
+        chat_title.setStyleSheet("""
+            QLabel{
+                color:white;
+                font-size:22px;
+                font-weight:800;
+                background:transparent;
+                border:none;
+            }
+        """)
         chat_layout.addWidget(chat_title)
-        chat_layout.addWidget(active)
-        
 
-        # Background Tasks
+        status_layout = QHBoxLayout()
+        status_layout.setContentsMargins(0, 0, 0, 3)
+        dot = QLabel()
+        dot.setFixedSize(12, 12)
+        dot.setStyleSheet("background:#22c55e; border-radius:6px;")
+        active = QLabel("Active")
+        active.setStyleSheet("""
+            QLabel{
+                color:white;
+                font-size:15px;
+                font-weight:600;
+                background:transparent;
+                border:none;
+            }
+        """)
+        status_layout.addWidget(dot)
+        status_layout.addSpacing(10)
+        status_layout.addWidget(active)
+        status_layout.addStretch()
+        chat_layout.addLayout(status_layout)
+
+        right_layout.addWidget(chat_card)
+
+        # ------------------- BACKGROUND TASKS -------------------
         task_card = QFrame()
-        task_layout = QVBoxLayout()
-        task_card.setLayout(task_layout)
         task_card.setStyleSheet("""
             QFrame {
                 background: rgba(255,255,255,0.04);
@@ -613,8 +591,7 @@ class ZakirAI(QMainWindow):
                 padding: 5px;
             }
         """)
-        t = QVBoxLayout(task_card)
-
+        task_layout = QVBoxLayout(task_card)
         task_title = QLabel("📊 Background Tasks")
         task_title.setFont(QFont("Segoe UI", 14, QFont.Bold))
         task_layout.addWidget(task_title)
@@ -623,25 +600,20 @@ class ZakirAI(QMainWindow):
             row = QFrame()
             row.setStyleSheet("border:none;")
             r = QHBoxLayout(row)
-
             name_label = QLabel(name)
             name_label.setStyleSheet("color:white;")
-
             state_label = QLabel(state)
             state_label.setStyleSheet(f"color:{color}; font-weight:bold;")
-
-            # r.addWidget(dot)
             r.addWidget(name_label)
             r.addStretch()
             r.addWidget(state_label)
-
             return row
 
-        
         task_layout.addWidget(task_item("File Search", "#00ff99", "Running"))
         task_layout.addWidget(task_item("Web Scraping", "#ff6b6b", "Running"))
+        right_layout.addWidget(task_card)
 
-        # Memory Snapshot
+        # ------------------- MEMORY SNAPSHOT -------------------
         memory_card = QFrame()
         memory_card.setStyleSheet("""
             QFrame {
@@ -651,69 +623,159 @@ class ZakirAI(QMainWindow):
                 padding: 10px;
             }
         """)
-        m = QVBoxLayout(memory_card)
-        title = QLabel("🧠 Memory Snapshot")
-        title.setFont(QFont("Segoe UI", 12, QFont.Bold))
-        m.addWidget(title)
+        memory_layout = QVBoxLayout(memory_card)
+        mem_title = QLabel("🧠 Memory Snapshot")
+        mem_title.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        memory_layout.addWidget(mem_title)
 
         def chip(key, value):
             row = QFrame()
-            row.setStyleSheet("""
-                background: rgba(0,200,255,0.08);
-                border-radius: 10px;
-                padding: 6px;
-            """)
+            row.setStyleSheet("background: rgba(0,200,255,0.08); border-radius: 10px; padding: 6px;")
             r = QHBoxLayout(row)
-
             k = QLabel(key)
             k.setStyleSheet("color:#8aa0d6;")
-
             v = QLabel(value)
             v.setStyleSheet("color:white; font-weight:bold;")
-
             r.addWidget(k)
             r.addStretch()
             r.addWidget(v)
-
             return row
 
-        m.addWidget(chip("Language", "Python"))
-        m.addWidget(chip("Project", "Zakir AI"))
+        memory_layout.addWidget(chip("Language", "Python"))
+        memory_layout.addWidget(chip("Project", "Zakir AI"))
+        memory_status = QLabel("🟢 Memory Sync Active")
+        memory_status.setStyleSheet("color:#00ff99; font-weight:bold;")
+        memory_layout.addWidget(memory_status)
+        right_layout.addWidget(memory_card)
 
-        status = QLabel("🟢 Memory Sync Active")
-        status.setStyleSheet("color:#00ff99; font-weight:bold;")
-        m.addWidget(status)
+        # ==========================================
+        # VOICE SETTINGS CARD (dropdown + side-by-side slider & percent)
+        # ==========================================
 
-
-
-        memory_layout = QVBoxLayout()
-        memory_card.setLayout(memory_layout)
-
-        memory_layout.addWidget(QLabel("Name: Zakirya"))
-        memory_layout.addWidget(QLabel("Favorite Language: Python"))
-        memory_layout.addWidget(QLabel("Project: AI Assistant"))
-
-        # Voice Settings
         voice_card = QFrame()
+        voice_card.setStyleSheet("""
+            QFrame{
+                background:qlineargradient(
+                    x1:0,y1:0,
+                    x2:1,y2:1,
+                    stop:0 #071122,
+                    stop:1 #0b1730
+                );
+                border:1px solid rgba(255,255,255,0.05);
+                border-radius:24px;
+            }
+        """)
         voice_layout = QVBoxLayout()
         voice_card.setLayout(voice_layout)
 
         voice_title = QLabel("🎤 Voice Settings")
-        voice_title.setFont(QFont("Segoe UI", 14, QFont.Bold))
+        voice_title.setStyleSheet("""
+            QLabel{
+                color:white;
+                font-size:22px;
+                font-weight:800;
+                background:transparent;
+                border:none;
+            }
+        """)
+        voice_layout.addWidget(voice_title)
 
+        # Voice Engine Dropdown
+        engine_box = QFrame()
+        engine_box.setStyleSheet("""
+            QFrame{
+                background:rgba(255,255,255,0.03);
+                border:1px solid rgba(255,255,255,0.04);
+                border-radius:18px;
+            }
+        """)
+        engine_layout = QVBoxLayout()
+        engine_box.setLayout(engine_layout)
+        
+        self.voice_engine_combo = QComboBox()
+        self.voice_engine_combo.addItems([
+            "en-US-GuyNeural",
+            "en-US-JennyNeural",
+            "en-GB-RyanNeural",
+            "en-IN-PrabhatNeural"
+        ])
+        self.voice_engine_combo.setStyleSheet("""
+            QComboBox {
+                background-color: #0f1830;
+                border: 1px solid #3b82f6;
+                border-radius: 12px;
+                padding: 8px;
+                color: white;
+                font-size: 13px;
+            }
+            QComboBox::drop-down {
+                border: none;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border: none;
+            }
+        """)
+        engine_layout.addWidget(self.voice_engine_combo)
+        voice_layout.addWidget(engine_box)
+
+        # Volume Section (slider and percent side by side)
+        volume_frame = QFrame()
+        volume_frame.setStyleSheet("""
+            QFrame{
+                background:rgba(255,255,255,0.03);
+                border:1px solid rgba(255,255,255,0.04);
+                border-radius:18px;
+            }
+        """)
+        volume_layout = QVBoxLayout()
+        volume_frame.setLayout(volume_layout)
+        
+        slider_percent_layout = QHBoxLayout()
         slider = QSlider(Qt.Horizontal)
         slider.setValue(80)
-
-        voice_layout.addWidget(voice_title)
-        voice_layout.addWidget(QLabel("en-US-GuyNeural"))
-        voice_layout.addWidget(slider)
-
-        right_layout.addWidget(chat_card)
-        right_layout.addWidget(task_card)
-        right_layout.addWidget(memory_card)
+        slider.setStyleSheet("""
+            QSlider::groove:horizontal{
+                background:#0f172a;
+                height:8px;
+                border-radius:4px;
+            }
+            QSlider::handle:horizontal{
+                background:#3b82f6;
+                width:18px;
+                margin:-6px 0;
+                border-radius:9px;
+            }
+            QSlider::sub-page:horizontal{
+                background:#3b82f6;
+                border-radius:4px;
+            }
+        """)
+        volume_percent = QLabel("80%")
+        volume_percent.setStyleSheet("color:#22c55e; font-size:14px; font-weight:700; background:transparent; border:none;")
+        volume_percent.setFixedWidth(45)
+        
+        slider_percent_layout.addWidget(slider)
+        slider_percent_layout.addWidget(volume_percent)
+        
+        volume_layout.addLayout(slider_percent_layout)
+        
+        def update_volume(value):
+            volume_percent.setText(f"{value}%")
+        slider.valueChanged.connect(update_volume)
+        
+        voice_layout.addWidget(volume_frame)
+        
         right_layout.addWidget(voice_card)
-
         right_layout.addStretch()
+
+        # Assign the container to the scroll area
+        right_scroll.setWidget(right_container)
+
+        # Put the scroll area inside the right panel frame
+        right_panel_layout = QVBoxLayout(right_panel)
+        right_panel_layout.setContentsMargins(0, 0, 0, 0)
+        right_panel_layout.addWidget(right_scroll)
 
         # ==========================================
         # ADD ALL TO MAIN LAYOUT
@@ -726,11 +788,8 @@ class ZakirAI(QMainWindow):
     def update_datetime(self):
         """Update time and date display"""
         now = datetime.now()
-        # Format: 11:30:45 PM
         time_str = now.strftime("%I:%M:%S %p")
-        # Format: Friday, May 16, 2025
         date_str = now.strftime("%A, %B %d, %Y")
-        
         self.time_label.setText(time_str)
         self.date_label.setText(date_str)
 
@@ -739,9 +798,8 @@ class ZakirAI(QMainWindow):
 # RUN APP
 # ==========================================
 
-app = QApplication(sys.argv)
-
-window = ZakirAI()
-window.show()
-
-sys.exit(app.exec_())
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = ZakirAI()
+    window.show()
+    sys.exit(app.exec_())
