@@ -1,6 +1,8 @@
 import sys
 import json
 import os
+import asyncio
+import edge_tts
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QColor, QPainter, QPen, QFont, QRadialGradient
 from datetime import datetime
@@ -281,7 +283,7 @@ class ZakirAI(QMainWindow):
         # ==========================================
 
         sidebar = QFrame()
-        sidebar.setFixedWidth(320)
+        sidebar.setFixedWidth(300)
         sidebar_layout = QVBoxLayout()
         sidebar.setLayout(sidebar_layout)
 
@@ -608,7 +610,7 @@ class ZakirAI(QMainWindow):
 
         # Outer frame that holds the scroll area
         right_panel = QFrame()
-        right_panel.setFixedWidth(300)
+        right_panel.setFixedWidth(354)
         right_panel.setStyleSheet("background: transparent; border: none;")
 
         # Create scroll area
@@ -621,12 +623,11 @@ class ZakirAI(QMainWindow):
         right_container = QWidget()
         right_container.setStyleSheet("background: transparent;")
         right_layout = QVBoxLayout(right_container)
-        right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setAlignment(Qt.AlignTop)
 
         # ------------------- CHAT CARD -------------------
         chat_card = QFrame()
-        chat_card.setFixedWidth(300)
+        # chat_card.setFixedWidth(250)
         chat_card.setStyleSheet("""
             QFrame{
                 background:qlineargradient(
@@ -801,12 +802,7 @@ class ZakirAI(QMainWindow):
         engine_box.setLayout(engine_layout)
         
         self.voice_engine_combo = QComboBox()
-        self.voice_engine_combo.addItems([
-            "en-US-GuyNeural",
-            "en-US-JennyNeural",
-            "en-GB-RyanNeural",
-            "en-IN-PrabhatNeural"
-        ])
+        self.voice_engine_combo.addItem("Loading voices...")
         self.voice_engine_combo.setStyleSheet("""
             QComboBox {
                 background-color: #0f1830;
@@ -892,6 +888,68 @@ class ZakirAI(QMainWindow):
         main_layout.addWidget(sidebar)
         main_layout.addWidget(center_frame)
         main_layout.addWidget(right_panel)
+
+        # Load voices from edge_tts
+        self.load_voices()
+
+    def load_voices(self):
+        """
+        Load all available voices from edge_tts and populate the combo box.
+        Handles asyncio safely without freezing the UI.
+        Format: "ShortName (Gender)"
+        """
+        try:
+            # Try to run asyncio safely - handle case where event loop already exists
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # If loop is already running (e.g., in Jupyter), use a different approach
+                    voices = asyncio.run_coroutine_threadsafe(
+                        edge_tts.list_voices(), loop
+                    ).result()
+                else:
+                    # Loop exists but not running, we can use it
+                    voices = loop.run_until_complete(edge_tts.list_voices())
+            except RuntimeError:
+                # No event loop exists, create a new one
+                voices = asyncio.run(edge_tts.list_voices())
+
+            # Clear the combo box and populate with voices
+            self.voice_engine_combo.clear()
+
+            # Sort voices by locale for better organization
+            sorted_voices = sorted(
+                voices,
+                key=lambda v: (v.get("Locale", ""), v.get("ShortName", ""))
+            )
+
+            # Add voices in the format "ShortName (Gender)"
+            for voice in sorted_voices:
+                short_name = voice.get("ShortName", "Unknown")
+                gender = voice.get("Gender", "Unknown")
+                display_name = f"{short_name} ({gender})"
+                self.voice_engine_combo.addItem(display_name, short_name)
+
+            # Set default voice
+            if self.voice_engine_combo.count() > 0:
+                # Try to find and select en-US-GuyNeural as default
+                for i in range(self.voice_engine_combo.count()):
+                    if "en-US-GuyNeural" in self.voice_engine_combo.itemText(i):
+                        self.voice_engine_combo.setCurrentIndex(i)
+                        break
+
+        except Exception as e:
+            print(f"Error loading voices: {e}")
+            # Fallback to default voices if fetch fails
+            self.voice_engine_combo.clear()
+            default_voices = [
+                ("en-US-GuyNeural", "Guy (Male)"),
+                ("en-US-JennyNeural", "Jenny (Female)"),
+                ("en-GB-RyanNeural", "Ryan (Male)"),
+                ("en-IN-PrabhatNeural", "Prabhat (Male)"),
+            ]
+            for short_name, display_name in default_voices:
+                self.voice_engine_combo.addItem(display_name, short_name)
 
     def update_datetime(self):
         """Update time and date display"""
