@@ -1,14 +1,6 @@
-# ==========================================
-# ZAKIR AI - FUTURISTIC AI ASSISTANT UI
-# Python + PyQt5
-# ==========================================
-
-# INSTALL:
-# pip install PyQt5
-
 import sys
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QColor, QPainter, QPen, QFont
+from PyQt5.QtGui import QColor, QPainter, QPen, QFont, QRadialGradient
 from datetime import datetime
 from PyQt5.QtWidgets import (
     QApplication,
@@ -110,21 +102,35 @@ class GlowCircle(QWidget):
         center_x = self.width() / 2
         center_y = self.height() / 2
 
-        # Glow
-        for i in range(15):
-            color = QColor(0, 180, 255, 15 - i)
+        # Gradient glow rings - blue to purple
+        for i in range(20):
+            # Calculate color gradient from blue to purple
+            progress = i / 20.0
+            r = int(0 + (120 - 0) * progress)
+            g = int(180 - (180 * progress))
+            b = int(255)
+            alpha = max(0, int(40 - i * 2))
+            
+            color = QColor(r, g, b, alpha)
             painter.setBrush(color)
             painter.setPen(Qt.NoPen)
 
             painter.drawEllipse(
-                int(center_x - self.radius - i * 3),
-                int(center_y - self.radius - i * 3),
-                int((self.radius + i * 3) * 2),
-                int((self.radius + i * 3) * 2),
+                int(center_x - self.radius - i * 2.5),
+                int(center_y - self.radius - i * 2.5),
+                int((self.radius + i * 2.5) * 2),
+                int((self.radius + i * 2.5) * 2),
             )
 
-        # Main circle
-        painter.setBrush(QColor(120, 0, 255))
+        # Main circle with gradient from blue to purple
+        gradient = QRadialGradient(
+            int(center_x), int(center_y), self.radius
+        )
+        gradient.setColorAt(0, QColor(100, 50, 255))  # Purple center
+        gradient.setColorAt(1, QColor(0, 150, 255))   # Blue edge
+        
+        painter.setBrush(gradient)
+        painter.setPen(Qt.NoPen)
         painter.drawEllipse(
             int(center_x - self.radius),
             int(center_y - self.radius),
@@ -132,21 +138,33 @@ class GlowCircle(QWidget):
             int(self.radius * 2),
         )
 
-        # Mic icon
-        painter.setPen(QPen(QColor("white"), 5))
-
+        # Mic icon - draw a proper microphone shape matching the first image
+        painter.setPen(QPen(QColor("white"), 3))
+        painter.setBrush(QColor("white"))
+        
+        # Microphone capsule - larger oval head
+        painter.drawEllipse(
+            int(center_x - 14),
+            int(center_y - 28),
+            28,
+            32,
+        )
+        
+        # Microphone stem
+        painter.setPen(QPen(QColor("white"), 3))
         painter.drawLine(
             int(center_x),
-            int(center_y - 20),
+            int(center_y + 4),
             int(center_x),
-            int(center_y + 20),
+            int(center_y + 18),
         )
-
+        
+        # Bottom speaker part
         painter.drawEllipse(
-            int(center_x - 15),
-            int(center_y - 40),
-            30,
-            50,
+            int(center_x - 6),
+            int(center_y + 16),
+            12,
+            8,
         )
 
 
@@ -442,55 +460,125 @@ class ZakirAI(QMainWindow):
         # ==========================================
         # CENTER SECTION (no scroll)
         # ==========================================
-
         center_frame = QFrame()
+        center_frame.setStyleSheet("background:#060b1b;")
+
         center_layout = QVBoxLayout()
         center_frame.setLayout(center_layout)
 
+        # ==========================================
+        # HEADER CARD (COMBINED)
+        # ==========================================
+
+        header_card = QFrame()
+        header_card.setFixedHeight(100)
+        header_card.setStyleSheet("""
+            QFrame {
+                background: rgba(255,255,255,0.04);
+                border: 1px solid rgba(0,200,255,0.15);
+                border-radius: 20px;
+                padding: 1px;
+            }
+        """)
+
+        header_layout = QVBoxLayout()
+        header_card.setLayout(header_layout)
+
         title = QLabel("Good Evening, Zakirya! 👋")
         title.setFont(QFont("Segoe UI", 20, QFont.Bold))
+        title.setStyleSheet("background: transparent; border: none;")
+
         subtitle = QLabel("How can I help you today?")
-        subtitle.setStyleSheet("color: #8aa0d6; font-size: 15px;")
-        center_layout.addWidget(title)
-        center_layout.addWidget(subtitle)
+        subtitle.setStyleSheet("""
+            color: #8aa0d6;
+            font-size: 15px;
+            background: transparent;
+            border: none;
+        """)
+
+        header_layout.addWidget(title)
+        header_layout.addWidget(subtitle)
+
+        center_layout.addWidget(header_card)
 
         # ==========================================
-        # MAIN LISTEN PANEL
+        # MAIN LISTEN PANEL (AS ONE CARD)
         # ==========================================
 
-        listen_panel = QFrame()
+        listen_card = QFrame()
+        # listen_card.setFixedHeight(300)
+        listen_card.setStyleSheet("""
+            QFrame {
+                background: rgba(255,255,255,0.04);
+                border: 1px solid rgba(0,200,255,0.15);
+                border-radius: 20px;
+                padding: 15px;
+            }
+        """)
+
         listen_layout = QVBoxLayout()
-        listen_panel.setLayout(listen_layout)
+        listen_card.setLayout(listen_layout)
 
-        wave = WaveWidget()
+        # ==========================================
+        # MIC (CENTERED)
+        # ==========================================
+
         mic = GlowCircle()
+
         mic_container = QHBoxLayout()
         mic_container.addStretch()
         mic_container.addWidget(mic)
         mic_container.addStretch()
 
-        listen_layout.addWidget(wave)
         listen_layout.addLayout(mic_container)
+
+        # ==========================================
+        # STATUS TEXT
+        # ==========================================
 
         status = QLabel("I'm listening")
         status.setAlignment(Qt.AlignCenter)
-        status.setFont(QFont("Segoe UI", 22, QFont.Bold))
+        status.setFont(QFont("Segoe UI", 18, QFont.Bold))
+        status.setStyleSheet("color:white; background:transparent; border:none;")
+
         sub_status = QLabel("Speak now...")
         sub_status.setAlignment(Qt.AlignCenter)
-        sub_status.setStyleSheet("color:#8aa0d6;")
-
-        stop_btn = QPushButton("⏹ Stop Listening")
-        stop_btn.setFixedWidth(200)
-        stop_layout = QHBoxLayout()
-        stop_layout.addStretch()
-        stop_layout.addWidget(stop_btn)
-        stop_layout.addStretch()
+        sub_status.setStyleSheet("color:#8aa0d6; background:transparent; border:none;")
 
         listen_layout.addWidget(status)
         listen_layout.addWidget(sub_status)
-        listen_layout.addLayout(stop_layout)
 
-        center_layout.addWidget(listen_panel)
+        # ==========================================
+        # STOP BUTTON
+        # ==========================================
+
+        stop_btn = QPushButton("⏹ Stop Listening")
+        stop_btn.setFixedWidth(180)
+        stop_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #111d3a;
+                border: 1px solid #243b73;
+                border-radius: 12px;
+                padding: 8px;
+                color: white;
+            }
+            QPushButton:hover {
+                background-color: #1b2c57;
+            }
+        """)
+
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        btn_layout.addWidget(stop_btn)
+        btn_layout.addStretch()
+
+        listen_layout.addLayout(btn_layout)
+
+        # ==========================================
+        # ADD TO CENTER LAYOUT
+        # ==========================================
+
+        center_layout.addWidget(listen_card)
 
         # ==========================================
         # INPUT BAR
