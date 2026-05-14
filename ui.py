@@ -1,4 +1,6 @@
 import sys
+import json
+import os
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QColor, QPainter, QPen, QFont, QRadialGradient
 from datetime import datetime
@@ -736,8 +738,19 @@ class ZakirAI(QMainWindow):
             r.addWidget(v)
             return row
 
-        memory_layout.addWidget(chip("Language", "Python"))
-        memory_layout.addWidget(chip("Project", "Zakir AI"))
+        # Load and display memory.json data
+        try:
+            memory_file = os.path.join(os.path.dirname(__file__), "memory.json")
+            if os.path.exists(memory_file):
+                with open(memory_file, 'r') as f:
+                    memory_data = json.load(f)
+                    for key, value in memory_data.items():
+                        memory_layout.addWidget(chip(key.title(), str(value)))
+            else:
+                memory_layout.addWidget(chip("Status", "No memory.json"))
+        except Exception as e:
+            memory_layout.addWidget(chip("Status", f"Error: {str(e)}"))
+        
         memory_status = QLabel("🟢 Memory Sync Active")
         memory_status.setStyleSheet("color:#00ff99; font-weight:bold;")
         memory_layout.addWidget(memory_status)
