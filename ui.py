@@ -2,6 +2,7 @@ import sys
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QColor, QPainter, QPen, QFont, QRadialGradient
 from datetime import datetime
+import psutil
 from PyQt5.QtWidgets import (
     QApplication,
     QWidget,
@@ -335,14 +336,20 @@ class ZakirAI(QMainWindow):
         sys_title = QLabel("💻 System Status")
         sys_title.setFont(QFont("Segoe UI", 14, QFont.Bold))
         system_layout.addWidget(sys_title)
-        cpu = QLabel("⚙ CPU Usage       23%")
-        ram = QLabel("🧠 Memory Usage   61%")
-        disk = QLabel("💾 Disk Usage     45%")
-        network = QLabel("🌐 Network        Stable")
-        for label in [cpu, ram, disk, network]:
+        self.cpu_label = QLabel("⚙ CPU Usage       0%")
+        self.ram_label = QLabel("🧠 Memory Usage   0%")
+        self.disk_label = QLabel("💾 Disk Usage     0%")
+        self.network_label = QLabel("🌐 Network        Checking...")
+        for label in [self.cpu_label, self.ram_label, self.disk_label, self.network_label]:
             label.setStyleSheet("color: #8aa0d6; padding: 8px; font-size: 14px;")
             system_layout.addWidget(label)
         sidebar_layout.addWidget(system_card)
+        
+        # Update system status every 2 seconds
+        system_timer = QTimer()
+        system_timer.timeout.connect(self.update_system_status)
+        system_timer.start(2000)
+        self.update_system_status()  # Initial update
 
         # ==========================================
         # PROFILE CARD
@@ -880,6 +887,33 @@ class ZakirAI(QMainWindow):
         date_str = now.strftime("%A, %B %d, %Y")
         self.time_label.setText(time_str)
         self.date_label.setText(date_str)
+
+    def update_system_status(self):
+        """Update system status with real-time data"""
+        try:
+            # CPU Usage
+            cpu_percent = psutil.cpu_percent(interval=0.1)
+            self.cpu_label.setText(f"⚙ CPU Usage       {int(cpu_percent)}%")
+            
+            # Memory Usage
+            memory = psutil.virtual_memory()
+            self.ram_label.setText(f"🧠 Memory Usage   {int(memory.percent)}%")
+            
+            # Disk Usage
+            disk = psutil.disk_usage('/')
+            self.disk_label.setText(f"💾 Disk Usage     {int(disk.percent)}%")
+            
+            # Network Status
+            try:
+                net_io = psutil.net_io_counters()
+                if net_io.bytes_sent > 0 or net_io.bytes_recv > 0:
+                    self.network_label.setText("🌐 Network        Active")
+                else:
+                    self.network_label.setText("🌐 Network        Idle")
+            except:
+                self.network_label.setText("🌐 Network        Stable")
+        except Exception as e:
+            print(f"Error updating system status: {e}")
 
 
 # ==========================================
