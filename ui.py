@@ -3,10 +3,13 @@ import json
 import os
 import asyncio
 import edge_tts
-from PyQt5.QtCore import Qt, QTimer
+import threading
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 from PyQt5.QtGui import QColor, QPainter, QPen, QFont, QRadialGradient
 from datetime import datetime
 import psutil
+from voice import listen, stop_ai
+from commands import process
 from PyQt5.QtWidgets import (
     QApplication,
     QWidget,
@@ -177,12 +180,54 @@ class GlowCircle(QWidget):
 # MAIN WINDOW
 # ==========================================
 
+def get_icon_for_command(command):
+    command = command.lower()
+    if any(word in command for word in ["play", "spotify", "music", "song"]):
+        return "🎵"
+    elif any(word in command for word in ["search", "google", "web", "browser", "news"]):
+        return "🌐"
+    elif any(word in command for word in ["open", "launch", "start"]):
+        return "🚀"
+    elif any(word in command for word in ["time", "date", "clock"]):
+        return "🕒"
+    elif any(word in command for word in ["weather", "temperature", "forecast"]):
+        return "⛅"
+    elif any(word in command for word in ["stop", "exit", "quit", "pause"]):
+        return "⏹"
+    if any(word in command for word in ["file", "folder", "directory", "browse","find","search for"]):
+        return "📁"
+    if any(word in command for word in ["calculator", "calculate", "math"]):
+        return "🧮"
+    if any(word in command for word in ["note", "notes", "write", "remember"]):
+        return "📝"
+    if any(word in command for word in ["brightness", "display", "screen"]):
+        return "☀️"
+    if any(word in command for word in ["volume", "sound", "audio"]):
+        return "🔊"
+    if any(word in command for word in ["settings", "preferences", "options"]):
+        return "⚙️"
+    if any(word in command for word in ["help", "commands", "assist"]):
+        return "❓"
+    if any(word in command for word in ["camera", "photo", "picture","screenshot"]):
+        return "📷"
+    if any(word in command for word in ["email", "mail", "gmail"]):
+        return "✉️"
+    if any(word in command for word in ["reload","refresh"]):
+        return "🔄"
+    else:
+        return "🗣"
+
 class ZakirAI(QMainWindow):
+    update_status_signal = pyqtSignal(str, str)
+    pause_signal = pyqtSignal()
+    add_recent_command_signal = pyqtSignal(str)
+
     def __init__(self):
         super().__init__()
 
         self.setWindowTitle("ZAKIR AI")
         self.setGeometry(100, 50, 1500, 900)
+        self.recent_commands_file = os.path.join(os.path.dirname(__file__), "recent_commands.json")
 
         self.setStyleSheet("""
             QMainWindow {
@@ -308,8 +353,8 @@ class ZakirAI(QMainWindow):
         recent_title = QLabel("🕘 Recent Commands")
         recent_title.setFont(QFont("Segoe UI", 14, QFont.Bold))
         recent_layout.addWidget(recent_title)
-        recent_list = QListWidget()
-        recent_list.setStyleSheet("""
+        self.recent_list = QListWidget()
+        self.recent_list.setStyleSheet("""
             QListWidget{
                 background: transparent;
                 border: none;
@@ -320,9 +365,7 @@ class ZakirAI(QMainWindow):
                 padding: 5px;
             }
         """)
-        recent_list.addItem("🎵 Open Spotify")
-        recent_list.addItem("🌐 Search AI News")
-        recent_layout.addWidget(recent_list)
+        recent_layout.addWidget(self.recent_list)
         sidebar_layout.addWidget(recent_card)
 
         # ==========================================
@@ -547,25 +590,25 @@ class ZakirAI(QMainWindow):
         # STATUS TEXT
         # ==========================================
 
-        status = QLabel("I'm listening")
-        status.setAlignment(Qt.AlignCenter)
-        status.setFont(QFont("Segoe UI", 18, QFont.Bold))
-        status.setStyleSheet("color:white; background:transparent; border:none;")
+        self.status = QLabel("Paused")
+        self.status.setAlignment(Qt.AlignCenter)
+        self.status.setFont(QFont("Segoe UI", 18, QFont.Bold))
+        self.status.setStyleSheet("color:white; background:transparent; border:none;")
 
-        sub_status = QLabel("Speak now...")
-        sub_status.setAlignment(Qt.AlignCenter)
-        sub_status.setStyleSheet("color:#8aa0d6; background:transparent; border:none;")
+        self.sub_status = QLabel("Click Start to begin...")
+        self.sub_status.setAlignment(Qt.AlignCenter)
+        self.sub_status.setStyleSheet("color:#8aa0d6; background:transparent; border:none;")
 
-        listen_layout.addWidget(status)
-        listen_layout.addWidget(sub_status)
+        listen_layout.addWidget(self.status)
+        listen_layout.addWidget(self.sub_status)
 
         # ==========================================
-        # STOP BUTTON
+        # TOGGLE BUTTON
         # ==========================================
 
-        stop_btn = QPushButton("⏹ Stop Listening")
-        stop_btn.setFixedWidth(180)
-        stop_btn.setStyleSheet("""
+        self.toggle_btn = QPushButton("▶ Start Listening")
+        self.toggle_btn.setFixedWidth(180)
+        self.toggle_btn.setStyleSheet("""
             QPushButton {
                 background-color: #111d3a;
                 border: 1px solid #243b73;
@@ -577,10 +620,11 @@ class ZakirAI(QMainWindow):
                 background-color: #1b2c57;
             }
         """)
+        self.toggle_btn.clicked.connect(self.toggle_listening)
 
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()
-        btn_layout.addWidget(stop_btn)
+        btn_layout.addWidget(self.toggle_btn)
         btn_layout.addStretch()
 
         listen_layout.addLayout(btn_layout)
@@ -891,6 +935,132 @@ class ZakirAI(QMainWindow):
 
         # Load voices from edge_tts
         self.load_voices()
+        self.load_recent_commands()
+
+        # Connect signals and start voice loop
+        self.update_status_signal.connect(self.update_status_labels)
+        self.pause_signal.connect(self.pause_listening)
+        self.add_recent_command_signal.connect(self.add_recent_command)
+        self.listening_event = threading.Event()
+        self.start_voice_loop()
+
+    def add_recent_command(self, command_text):
+        from datetime import datetime, timedelta
+        now = datetime.now()
+        
+        item = QListWidgetItem(command_text)
+        item.setData(Qt.UserRole, now)
+        self.recent_list.insertItem(0, item)
+        
+        cutoff = now - timedelta(hours=24)
+        
+        # Remove items older than 24 hours from the bottom
+        for i in range(self.recent_list.count() - 1, -1, -1):
+            list_item = self.recent_list.item(i)
+            item_time = list_item.data(Qt.UserRole)
+            if item_time and item_time < cutoff:
+                self.recent_list.takeItem(i)
+            else:
+                break
+                
+        self.save_recent_commands()
+
+    def load_recent_commands(self):
+        from datetime import datetime, timedelta
+        if os.path.exists(self.recent_commands_file):
+            try:
+                with open(self.recent_commands_file, "r") as f:
+                    data = json.load(f)
+                now = datetime.now()
+                cutoff = now - timedelta(hours=24)
+                
+                # We assume the file stores items from newest (index 0) to oldest.
+                # To maintain order when inserting them, we can just append them to the list.
+                for item in data:
+                    item_time = datetime.fromisoformat(item["time"])
+                    if item_time >= cutoff:
+                        list_item = QListWidgetItem(item["text"])
+                        list_item.setData(Qt.UserRole, item_time)
+                        self.recent_list.addItem(list_item)
+            except Exception as e:
+                print("Error loading recent commands:", e)
+
+    def save_recent_commands(self):
+        data = []
+        for i in range(self.recent_list.count()):
+            list_item = self.recent_list.item(i)
+            item_time = list_item.data(Qt.UserRole)
+            if item_time:
+                data.append({
+                    "text": list_item.text(),
+                    "time": item_time.isoformat()
+                })
+        try:
+            with open(self.recent_commands_file, "w") as f:
+                json.dump(data, f)
+        except Exception as e:
+            print("Error saving recent commands:", e)
+    
+    def pause_listening(self):
+        self.listening_event.clear()
+        self.toggle_btn.setText("▶ Start Listening")
+        self.update_status_labels("Paused", "Click Start to begin...")
+        stop_ai()
+
+    def toggle_listening(self):
+        if self.listening_event.is_set():
+            # Stop listening
+            self.pause_listening()
+        else:
+            # Start listening
+            self.listening_event.set()
+            self.toggle_btn.setText("⏹ Stop Listening")
+
+    def update_status_labels(self, status_text, sub_status_text):
+        """Update the UI labels from the main thread"""
+        self.status.setText(status_text)
+        self.sub_status.setText(sub_status_text)
+
+    def start_voice_loop(self):
+        """Start the background thread for listening"""
+        thread = threading.Thread(target=self.voice_loop, daemon=True)
+        thread.start()
+
+    def voice_loop(self):
+        """Continuous loop running in background daemon thread"""
+        import time
+        while True:
+            # Wait until listening is enabled
+            if not self.listening_event.is_set():
+                self.listening_event.wait(0.5)
+                continue
+
+            self.update_status_signal.emit("I'm listening", "Speak now...")
+            command = listen()
+            
+            # Check again if disabled during listening
+            if not self.listening_event.is_set():
+                continue
+
+            if command:
+                stop_ai()
+                self.update_status_signal.emit("Processing", f"Command: {command}")
+                current_time = datetime.now().strftime("%I:%M %p")
+                icon = get_icon_for_command(command)
+                self.add_recent_command_signal.emit(f"{icon} {command.capitalize()} - {current_time}")
+                try:
+                    process(command)
+                    if self.listening_event.is_set():
+                        self.update_status_signal.emit("Completed", "Ready for next command")
+                except Exception as e:
+                    if self.listening_event.is_set():
+                        self.update_status_signal.emit("Error", str(e))
+                
+                if "exit" in command or "stop" in command:
+                    self.pause_signal.emit()
+
+                # Add a brief pause before listening again
+                time.sleep(2)
 
     def load_voices(self):
         """

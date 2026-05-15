@@ -328,7 +328,7 @@ def process(command):
         else:
             speak("No tasks found")
 
-    elif "clear tasks" in command:
+    elif "clear task" in command:
         task_manager.task_manager.clear_completed_tasks()
     # =========================
     # QUEUE MANAGEMENT
@@ -461,7 +461,7 @@ def process(command):
 
 
     else:
-        human_ai.human_ai.human_speak("Hmm, I'm not sure what you mean by that. Could you try saying it differently?")
+        human_ai.human_ai.human_speak("I'm not sure what you mean by that. Could you try saying it differently?")
     
 
     return True
